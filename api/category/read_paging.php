@@ -1,21 +1,26 @@
 <?php
-// required header
+// required headers
 header("Access-Control-Allow-Origin: *");
 header("Content-Type: application/json; charset=UTF-8");
   
 // include database and object files
+include_once '../config/core.php';
+include_once '../shared/utilities.php';
 include_once '../config/database.php';
 include_once '../objects/category.php';
   
-// instantiate database and category object
+// utilities
+$utilities = new Utilities();
+  
+// instantiate database and product object
 $database = new Database();
 $db = $database->getConnection();
   
 // initialize object
 $category = new Category($db);
   
-// query categorys
-$stmt = $category->read();
+// query products
+$stmt = $category->readPaging($from_record_num, $records_per_page);
 $num = $stmt->rowCount();
   
 // check if more than 0 record found
@@ -24,6 +29,7 @@ if($num>0){
     // products array
     $category_arr=array();
     $category_arr["records"]=array();
+    $category_arr["paging"]=array();
   
     // retrieve our table contents
     // fetch() is faster than fetchAll()
@@ -37,16 +43,24 @@ if($num>0){
         $category_item=array(
             "id" => $id,
             "name" => $name,
-            "description" => html_entity_decode($description)
+            "description" => html_entity_decode($description),
+            "created" => $created
         );
   
         array_push($category_arr["records"], $category_item);
     }
   
+  
+    // include paging
+    $total_rows=$category->count();
+    $page_url="{$home_url}category/read_paging.php?";
+    $paging=$utilities->getPaging($page, $total_rows, $records_per_page, $page_url);
+    $category_arr["paging"]=$paging;
+  
     // set response code - 200 OK
     http_response_code(200);
   
-    // show categories data in json format
+    // make it json format
     echo json_encode($category_arr);
 }
   
@@ -55,9 +69,9 @@ else{
     // set response code - 404 Not found
     http_response_code(404);
   
-    // tell the user no categories found
+    // tell the user products does not exist
     echo json_encode(
-        array("message" => "No categories found.")
+        array("message" => "No category found.")
     );
 }
 ?>

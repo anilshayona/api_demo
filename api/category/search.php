@@ -1,21 +1,25 @@
 <?php
-// required header
+// required headers
 header("Access-Control-Allow-Origin: *");
 header("Content-Type: application/json; charset=UTF-8");
   
 // include database and object files
+include_once '../config/core.php';
 include_once '../config/database.php';
 include_once '../objects/category.php';
   
-// instantiate database and category object
+// instantiate database and product object
 $database = new Database();
 $db = $database->getConnection();
   
 // initialize object
 $category = new Category($db);
   
-// query categorys
-$stmt = $category->read();
+// get keywords
+$keywords=isset($_GET["s"]) ? $_GET["s"] : "";
+  
+// query products
+$stmt = $category->search($keywords);
 $num = $stmt->rowCount();
   
 // check if more than 0 record found
@@ -38,6 +42,7 @@ if($num>0){
             "id" => $id,
             "name" => $name,
             "description" => html_entity_decode($description)
+            
         );
   
         array_push($category_arr["records"], $category_item);
@@ -46,18 +51,17 @@ if($num>0){
     // set response code - 200 OK
     http_response_code(200);
   
-    // show categories data in json format
+    // show products data
     echo json_encode($category_arr);
 }
   
 else{
-  
     // set response code - 404 Not found
     http_response_code(404);
   
-    // tell the user no categories found
+    // tell the user no products found
     echo json_encode(
-        array("message" => "No categories found.")
+        array("message" => "No category found.")
     );
 }
 ?>
